@@ -60,3 +60,8 @@ running, the widget takes its own reading and reuses the app's last electricity 
 Both targets use automatic signing with the team in `project.yml`. Archive with
 `xcodebuild archive -allowProvisioningUpdates`, then `xcodebuild -exportArchive` with
 `ExportOptions.plist`, or use Product › Archive in Xcode.
+
+## Licence
+
+The code is under the MIT licence; see `LICENSE`. The bundled data comes from the sources named
+above and stays under their terms.
