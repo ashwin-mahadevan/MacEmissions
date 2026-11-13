@@ -2,15 +2,15 @@ import SwiftUI
 
 /// What the menu bar item shows next to its symbol. Chosen in Settings.
 enum MenuBarMetric: String, CaseIterable, Identifiable {
-    case power, emissionsRate, emissionsToday, costToday
+    case emissionsToday, emissionsRate, power, costToday
 
     var id: Self { self }
 
     var title: String {
         switch self {
-        case .power: "Power Now"
-        case .emissionsRate: "Emissions per Hour"
         case .emissionsToday: "Emissions Today"
+        case .emissionsRate: "Emissions per Hour"
+        case .power: "Power Now"
         case .costToday: "Cost Today"
         }
     }

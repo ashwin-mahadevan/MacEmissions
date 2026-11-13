@@ -17,7 +17,7 @@ struct SettingsView: View {
 /// The menu bar item and opening at login.
 private struct GeneralSettings: View {
     @AppStorage("showInMenuBar") private var showInMenuBar = true
-    @AppStorage("menuBarMetric") private var menuBarMetric = MenuBarMetric.power
+    @AppStorage("menuBarMetric") private var menuBarMetric = MenuBarMetric.emissionsToday
     @State private var opensAtLogin = SMAppService.mainApp.status == .enabled
 
     var body: some View {
