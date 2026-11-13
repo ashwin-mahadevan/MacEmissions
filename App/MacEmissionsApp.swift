@@ -5,6 +5,7 @@ struct MacEmissionsApp: App {
     @State private var grid: GridModel
     @State private var sampler: PowerSampler
     @AppStorage("showInMenuBar") private var showInMenuBar = true
+    @AppStorage("menuBarMetric") private var menuBarMetric = MenuBarMetric.power
 
     init() {
         let grid = GridModel()
@@ -13,11 +14,11 @@ struct MacEmissionsApp: App {
     }
 
     var body: some Scene {
-        Window("MacEmissions", id: "main") {
+        Window("MacEmissions", id: "dashboard") {
             MainView()
                 .environment(sampler)
         }
-        .defaultSize(width: 420, height: 640)
+        .defaultSize(width: 760, height: 920)
 
         Settings {
             SettingsView()
@@ -25,11 +26,11 @@ struct MacEmissionsApp: App {
         }
 
         MenuBarExtra(isInserted: $showInMenuBar) {
-            DashboardView()
+            MenuBarPanel()
                 .environment(sampler)
         } label: {
-            Label(sampler.snapshot?.systemWatts.wattsText ?? "– W",
-                  systemImage: sampler.snapshot?.onCharger == false ? "bolt.batteryblock" : "bolt")
+            Label(menuBarMetric.text(for: sampler.snapshot),
+                  systemImage: menuBarMetric.symbol(for: sampler.snapshot))
                 .labelStyle(.titleAndIcon)
         }
         .menuBarExtraStyle(.window)

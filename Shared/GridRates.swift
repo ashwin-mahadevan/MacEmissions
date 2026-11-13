@@ -32,32 +32,16 @@ extension PowerSnapshot {
         return cost.costText(rates.currencyCode)
     }
 
-    /// "6.40 Wh" or "1.25 kWh"
-    var energyText: String {
-        if energyWh < 1000 {
-            return "\(energyWh.formatted(.number.precision(.fractionLength(2)))) Wh"
-        }
-        return Measurement(value: energyWh / 1000, unit: UnitEnergy.kilowattHours).formatted(
-            .measurement(width: .abbreviated, usage: .asProvided,
-                         numberFormatStyle: .number.precision(.fractionLength(2))))
-    }
-}
+    var energyText: String { energyWh.wattHours.text }
 
-extension Double {
-    /// Grams of CO₂e as "3.7 g CO₂e" or "1.25 kg CO₂e".
-    var co2Text: String {
-        let inKilograms = self >= 1000
-        let value = inKilograms ? self / 1000 : self
-        let digits = value < 10 ? (inKilograms ? 2 : 1) : (value < 100 ? 1 : 0)
-        let mass = Measurement(value: value, unit: inKilograms ? UnitMass.kilograms : UnitMass.grams)
-            .formatted(.measurement(width: .abbreviated, usage: .asProvided,
-                                    numberFormatStyle: .number.precision(.fractionLength(digits))))
-        return "\(mass) CO₂e"
+    /// "$0.3258 per kWh"
+    var priceText: String? {
+        guard let rates, let price = rates.pricePerKWh else { return nil }
+        return "\(price.costText(rates.currencyCode)) per kWh"
     }
 
-    /// Money in the given currency. Amounts under 1 show up to four decimals ("$0.0017").
-    func costText(_ currencyCode: String) -> String {
-        let style = FloatingPointFormatStyle<Double>.Currency.currency(code: currencyCode)
-        return self < 1 ? formatted(style.precision(.fractionLength(2...4))) : formatted(style)
+    /// "195 g CO₂e per kWh"
+    var intensityText: String? {
+        rates?.gramsPerKWh.map { "\($0.formatted(.number.precision(.fractionLength(0)))) g CO₂e per kWh" }
     }
 }

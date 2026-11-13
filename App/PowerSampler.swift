@@ -15,6 +15,8 @@ final class PowerSampler {
     private(set) var snapshot: PowerSnapshot?
     /// False once we've looked and found no battery (desktop Macs don't report power to apps).
     private(set) var hasBattery = true
+    /// Energy for each of the last 30 days, today included.
+    private(set) var days: [DayRecord] = DayStore.load()
 
     @ObservationIgnored private let cpuLoad = CPULoad()
     @ObservationIgnored private let grid: GridModel
@@ -35,6 +37,9 @@ final class PowerSampler {
         if defaults.object(forKey: "energyDay") as? Date == day {
             energyWh = defaults.double(forKey: "energyTodayWh")
         }
+        // Pick the chart up where the last run left off, if that was within the half hour.
+        let cutoff = Date().addingTimeInterval(-30 * 60)
+        history = SharedStore.load()?.history.filter { $0.date > cutoff } ?? []
         Task { [weak self] in
             while let self {
                 self.tick()
@@ -83,6 +88,11 @@ final class PowerSampler {
             SharedStore.save(snap)
             defaults.set(day, forKey: "energyDay")
             defaults.set(energyWh, forKey: "energyTodayWh")
+            let rates = snap.rates
+            days = DayStore.updating(days, with: DayRecord(
+                day: day, energyWh: energyWh, gramsPerKWh: rates?.gramsPerKWh,
+                pricePerKWh: rates?.pricePerKWh, currencyCode: rates?.currencyCode))
+            DayStore.save(days)
             lastWidgetSave = now
         }
         if now.timeIntervalSince(lastWidgetReload) >= 60 {

@@ -1,18 +1,40 @@
 import SwiftUI
 import ServiceManagement
 
-/// The standard Settings window (MacEmissions › Settings…, ⌘,).
+/// The standard Settings window (MacEmissions › Settings…, ⌘,), in two tabs.
 struct SettingsView: View {
-    @Environment(GridModel.self) private var grid
+    var body: some View {
+        TabView {
+            GeneralSettings()
+                .tabItem { Label("General", systemImage: "gearshape") }
+            ElectricitySettings()
+                .tabItem { Label("Electricity", systemImage: "bolt.fill") }
+        }
+        .frame(width: 480)
+    }
+}
+
+/// The menu bar item and opening at login.
+private struct GeneralSettings: View {
     @AppStorage("showInMenuBar") private var showInMenuBar = true
+    @AppStorage("menuBarMetric") private var menuBarMetric = MenuBarMetric.power
     @State private var opensAtLogin = SMAppService.mainApp.status == .enabled
 
     var body: some View {
-        @Bindable var grid = grid
-
         Form {
             Section {
                 Toggle("Show in Menu Bar", isOn: $showInMenuBar)
+                Picker("Menu Bar Shows", selection: $menuBarMetric) {
+                    ForEach(MenuBarMetric.allCases) { metric in
+                        Text(metric.title).tag(metric)
+                    }
+                }
+                .disabled(!showInMenuBar)
+            } footer: {
+                Text("Emissions and cost fall back to power when your electricity's figures aren't set.")
+            }
+
+            Section {
                 Toggle("Open at Login", isOn: $opensAtLogin)
                     .onChange(of: opensAtLogin) { _, wanted in
                         do {
@@ -22,8 +44,23 @@ struct SettingsView: View {
                         let actual = SMAppService.mainApp.status == .enabled
                         if actual != opensAtLogin { opensAtLogin = actual }
                     }
+            } footer: {
+                Text("Today's totals count only while MacEmissions is running.")
             }
+        }
+        .formStyle(.grouped)
+        .fixedSize(horizontal: false, vertical: true)
+    }
+}
 
+/// Where the Mac is, and the carbon intensity and price of its electricity.
+private struct ElectricitySettings: View {
+    @Environment(GridModel.self) private var grid
+
+    var body: some View {
+        @Bindable var grid = grid
+
+        Form {
             Section {
                 Picker("Region", selection: $grid.regionOverride) {
                     Text(automaticTitle).tag("")
@@ -48,24 +85,30 @@ struct SettingsView: View {
                     }
                 }
                 if grid.regionOverride.isEmpty { locationRow }
+            } header: {
+                Text("Location")
+            } footer: {
+                Text("Your location is used only to find your country and, in the US, your state, grid region and local price. Your coordinates, and the ZIP code found from them, aren't kept.")
+            }
 
+            Section {
                 TextField("Price per kWh (\(grid.currencyCode))", value: $grid.customPrice, format: .number,
                           prompt: Text(grid.defaultPrice?.formatted() ?? "Not set"))
-                TextField("Carbon Intensity (g CO₂e per kWh)", value: $grid.customIntensity, format: .number,
+                TextField("Carbon Intensity (g CO₂e/kWh)", value: $grid.customIntensity, format: .number,
                           prompt: Text(grid.defaultIntensity?.formatted(.number.precision(.fractionLength(0))) ?? "Not set"))
             } header: {
-                Text("Electricity")
+                Text("Rates")
             } footer: {
                 Text("""
                     Leave a field empty to use the figure for your region: the average carbon intensity of its \
-                    electricity and a typical household price. Enter your own if you know your tariff. \
+                    electricity and a typical household price. Enter your own if you know your tariff.
+
                     Data: Ember and Energy Institute via Our World in Data (countries); EPA eGRID, EIA and \
                     National Laboratory of the Rockies (US).
                     """)
             }
         }
         .formStyle(.grouped)
-        .frame(width: 440)
         .fixedSize(horizontal: false, vertical: true)
     }
 

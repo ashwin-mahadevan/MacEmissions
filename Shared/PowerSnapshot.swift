@@ -106,17 +106,6 @@ enum SharedStore {
     }
 }
 
-// MARK: - Formatting (system formatters, so units and digits follow the user's locale)
-
-extension Double {
-    /// "12.3 W"
-    var wattsText: String {
-        Measurement(value: self, unit: UnitPower.watts).formatted(
-            .measurement(width: .abbreviated, usage: .asProvided,
-                         numberFormatStyle: .number.precision(.fractionLength(self < 10 ? 2 : 1))))
-    }
-}
-
 extension PowerSnapshot {
     var sourceTitle: String { onCharger ? "Power Adapter" : "Battery" }
     var sourceSymbol: String { onCharger ? "powerplug.fill" : "battery.75percent" }
@@ -131,4 +120,49 @@ extension PowerSnapshot {
             Duration.seconds($0 * 60).formatted(.units(allowed: [.hours, .minutes], width: .abbreviated))
         }
     }
+}
+
+extension PowerSnapshot {
+    /// A battery symbol that matches the charge level.
+    var batterySymbol: String {
+        if isCharging { return "battery.100percent.bolt" }
+        switch batteryPercent ?? 100 {
+        case ..<13: return "battery.0percent"
+        case ..<38: return "battery.25percent"
+        case ..<63: return "battery.50percent"
+        case ..<88: return "battery.75percent"
+        default: return "battery.100percent"
+        }
+    }
+
+    /// What the battery is doing, in a few words: "Charging at 12.3 W · 35 min until full".
+    var batteryStatusText: String {
+        var parts: [String] = []
+        if intoBatteryWatts > 0.05 {
+            parts.append("Charging at \(intoBatteryWatts.wattsText)")
+        } else if fromBatteryWatts > 0.05 {
+            parts.append("Supplying \(fromBatteryWatts.wattsText)")
+        } else {
+            parts.append(onCharger ? "Not charging" : "Idle")
+        }
+        if let time = timeRemainingText {
+            parts.append(isCharging ? "\(time) until full" : "\(time) left")
+        }
+        return parts.joined(separator: " · ")
+    }
+
+    /// Sample figures for previews and the widget gallery.
+    static let preview = PowerSnapshot(
+        date: .now, systemWatts: 14.2,
+        onCharger: true, chargerInputWatts: 26.5, batteryWatts: 12.3, batteryPercent: 82, isCharging: true,
+        chargerName: "96W USB-C Power Adapter", chargerRatedWatts: 96, minutesRemaining: 35,
+        history: (0..<60).map { i in
+            let step = Double(i)
+            let watts: Double = 13 + 5 * sin(step / 5) + 2 * sin(step / 1.7) + Double(i % 3)
+            return HistoryPoint(date: Date.now.addingTimeInterval((step - 60) * 30), watts: watts)
+        },
+        energyWh: 96, energySince: Calendar.current.startOfDay(for: .now),
+        rates: GridRates(regionCode: "US", stateCode: "CA", placeName: "California",
+                         gridName: "WECC California", gramsPerKWh: 195.0, pricePerKWh: 0.3258, currencyCode: "USD"),
+        cpuLoadPercent: 18, thermalState: .nominal, lowPowerMode: false, measuredAt: .now.addingTimeInterval(-23))
 }

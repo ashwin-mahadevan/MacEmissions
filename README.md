@@ -51,6 +51,7 @@ Or run `xcodegen generate` and open `MacEmissions.xcodeproj` in Xcode.
   discarded; only the country, state, subregion and price are stored. Without location access the app uses the Mac's
   region setting (country only), and the user can pick a country and state and type a ZIP code.
 - Energy is added up per calendar day, only while the app is running, and survives relaunches.
+  The last 30 days are kept, each with the carbon intensity and price that applied that day.
 
 The app writes its latest reading to the app group container for the widget. If the app isn't
 running, the widget takes its own reading and reuses the app's last electricity figures.

@@ -27,10 +27,34 @@ struct PowerProvider: TimelineProvider {
         if let saved, Date().timeIntervalSince(saved.date) < 5 * 60 {
             return PowerEntry(date: .now, snapshot: saved)
         }
-        // Keep the app's last known electricity figures so emissions still show.
+        // Keep the app's last known electricity figures, and today's total so far, so
+        // emissions still show.
         var own = PowerSnapshot.measure()
         own?.rates = saved?.rates
+        if let saved, Calendar.current.isDateInToday(saved.energySince) {
+            own?.energyWh = saved.energyWh
+            own?.energySince = saved.energySince
+        }
         return PowerEntry(date: .now, snapshot: own)
+    }
+}
+
+/// Picks the layout for the widget's size.
+struct PowerWidgetView: View {
+    @Environment(\.widgetFamily) private var family
+    var entry: PowerEntry
+
+    var body: some View {
+        if let snapshot = entry.snapshot {
+            switch family {
+            case .systemSmall: SmallWidget(snapshot: snapshot)
+            case .systemMedium: MediumWidget(snapshot: snapshot)
+            default: LargeWidget(snapshot: snapshot)
+            }
+        } else {
+            Label("No power data", systemImage: "bolt.slash")
+                .foregroundStyle(.secondary)
+        }
     }
 }
 
@@ -41,25 +65,10 @@ struct MacEmissionsWidget: Widget {
             PowerWidgetView(entry: entry)
                 .containerBackground(.fill.tertiary, for: .widget)
         }
-        .configurationDisplayName("Power Use")
-        .description("How many watts your Mac is using, where they come from, and the carbon emissions of that electricity.")
+        .configurationDisplayName("Emissions and Power")
+        .description("The carbon emissions of the electricity your Mac has used today, and how many watts it is using now.")
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
-}
-
-extension PowerSnapshot {
-    static let preview = PowerSnapshot(
-        date: .now, systemWatts: 14.2,
-        onCharger: true, chargerInputWatts: 26.5, batteryWatts: 12.3, batteryPercent: 82, isCharging: true,
-        chargerName: "96W USB-C Power Adapter", chargerRatedWatts: 96, minutesRemaining: 35,
-        history: (0..<30).map { i in
-            HistoryPoint(date: .now.addingTimeInterval(Double(i - 30) * 30),
-                         watts: 12 + 5 * sin(Double(i) / 4) + Double(i % 3))
-        },
-        energyWh: 96, energySince: Calendar.current.startOfDay(for: .now),
-        rates: GridRates(regionCode: "US", stateCode: "CA", placeName: "California",
-                         gridName: "WECC California", gramsPerKWh: 195.0, pricePerKWh: 0.3258, currencyCode: "USD"),
-        cpuLoadPercent: 18, thermalState: .nominal, lowPowerMode: false, measuredAt: .now)
 }
 
 #Preview(as: .systemSmall) { MacEmissionsWidget() } timeline: { PowerEntry(date: .now, snapshot: .preview) }
