@@ -38,12 +38,6 @@ extension Double {
 
     var wattsText: String { watts.text }
     var co2Text: String { co2.text }
-
-    /// Money in the given currency. Amounts under 1 show up to four decimals ("$0.0017").
-    func costText(_ currencyCode: String) -> String {
-        let style = FloatingPointFormatStyle<Double>.Currency.currency(code: currencyCode)
-        return self < 1 ? formatted(style.precision(.fractionLength(2...4))) : formatted(style)
-    }
 }
 
 /// A quantity with a large number and a smaller, quieter unit.

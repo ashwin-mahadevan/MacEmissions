@@ -2,8 +2,7 @@ import Foundation
 import CoreLocation
 import Observation
 
-/// Works out which country's electricity this Mac is using, and the carbon intensity and
-/// price that go with it.
+/// Works out which electricity grid this Mac is on, and the carbon intensity that goes with it.
 ///
 /// The country comes from Location Services when the user allows it (approximate accuracy is
 /// enough), otherwise from the Mac's region setting. Only the country code is kept; the
@@ -14,24 +13,20 @@ final class GridModel: NSObject, CLLocationManagerDelegate {
 
     /// Country found from the Mac's location, remembered between launches.
     private(set) var locatedRegion: String?
-    /// US state found from the Mac's location (postal abbreviation), when it is in the US.
+    /// State, province or territory found from the Mac's location (its abbreviation).
     private(set) var locatedState: String?
     /// EPA grid subregion found from the Mac's location, when it is in the US. The ZIP code
     /// used to find it is not kept.
     private(set) var locatedSubregion: String?
-    /// Local utilities' residential price per kWh, found the same way from the ZIP code.
-    private(set) var locatedPrice: Double?
     private(set) var locationAccess = LocationAccess.notAsked
 
     /// A country chosen by hand, or "" to detect it.
     var regionOverride: String { didSet { defaults.set(regionOverride, forKey: Keys.regionOverride) } }
-    /// For the US: a state chosen by hand, "" to detect it, or `nationalAverage`.
+    /// A state or province chosen by hand, "" to detect it, or `nationalAverage`.
     var stateOverride: String { didSet { defaults.set(stateOverride, forKey: Keys.stateOverride) } }
     static let nationalAverage = "national"
     /// For the US: a ZIP code typed by hand, or "" to use the Mac's location.
     var zipOverride: String { didSet { defaults.set(zipOverride, forKey: Keys.zipOverride) } }
-    /// The user's own price per kWh, or nil to use the built-in figure.
-    var customPrice: Double? { didSet { store(customPrice, forKey: Keys.customPrice) } }
     /// The user's own carbon intensity in g CO₂e/kWh, or nil to use the built-in figure.
     var customIntensity: Double? { didSet { store(customIntensity, forKey: Keys.customIntensity) } }
 
@@ -45,9 +40,7 @@ final class GridModel: NSObject, CLLocationManagerDelegate {
         static let regionOverride = "regionOverride"
         static let stateOverride = "stateOverride"
         static let locatedSubregion = "locatedSubregion"
-        static let locatedPrice = "locatedPricePerKWh"
         static let zipOverride = "zipOverride"
-        static let customPrice = "customPricePerKWh"
         static let customIntensity = "customGramsPerKWh"
     }
 
@@ -58,9 +51,7 @@ final class GridModel: NSObject, CLLocationManagerDelegate {
         regionOverride = saved.string(forKey: Keys.regionOverride) ?? ""
         stateOverride = saved.string(forKey: Keys.stateOverride) ?? ""
         locatedSubregion = saved.string(forKey: Keys.locatedSubregion)
-        locatedPrice = saved.object(forKey: Keys.locatedPrice) as? Double
         zipOverride = saved.string(forKey: Keys.zipOverride) ?? ""
-        customPrice = saved.object(forKey: Keys.customPrice) as? Double
         customIntensity = saved.object(forKey: Keys.customIntensity) as? Double
         super.init()
 
@@ -82,19 +73,24 @@ final class GridModel: NSObject, CLLocationManagerDelegate {
     var detectedFromLocation: Bool { locatedRegion != nil }
     var regionCode: String? { regionOverride.isEmpty ? detectedRegion : regionOverride }
 
-    /// The US state found from location, if the Mac is in the US.
+    /// The states of the country in use, or nil if there are no figures below country level.
+    private var states: [String: (name: String, gramsPerKWh: Double)]? {
+        regionCode.flatMap { GridData.states[$0] }
+    }
+
+    /// The state or province found from location, if the Mac is in the country in use.
     var detectedState: String? {
-        guard locatedRegion == "US", let state = locatedState, GridData.usStates[state] != nil else { return nil }
+        guard locatedRegion == regionCode, let state = locatedState, states?[state] != nil else { return nil }
         return state
     }
 
-    /// The US state whose figures are used, or nil for the national average (and outside the US).
+    /// The state or province whose figures are used, or nil for the national average.
     var stateCode: String? {
-        guard regionCode == "US" else { return nil }
+        guard let states else { return nil }
         switch stateOverride {
         case "": return detectedState
         case Self.nationalAverage: return nil
-        default: return GridData.usStates[stateOverride] == nil ? nil : stateOverride
+        default: return states[stateOverride] == nil ? nil : stateOverride
         }
     }
 
@@ -120,36 +116,17 @@ final class GridModel: NSObject, CLLocationManagerDelegate {
         return code.flatMap { GridData.subregions[$0] == nil ? nil : $0 }
     }
 
-    /// The local utilities' price for the ZIP code, or nil to use the state's or country's.
-    var zipPrice: Double? {
-        switch zipSource {
-        case .typed(let zip): GridData.price(forZIP: zip)
-        case .located: locatedPrice
-        case .none: nil
-        }
-    }
-
     var gridName: String? { subregionCode.flatMap { GridData.subregions[$0]?.name } }
 
     var placeName: String? {
-        if let state = stateCode.flatMap({ GridData.usStates[$0] }) { return state.name }
+        if let state = stateCode.flatMap({ states?[$0] }) { return state.name }
         return regionCode.flatMap { Locale.current.localizedString(forRegionCode: $0) }
     }
 
     var defaultIntensity: Double? {
         if let grams = subregionCode.flatMap({ GridData.subregionGramsPerKWh($0) }) { return grams }
-        if let state = stateCode.flatMap({ GridData.usStates[$0] }) { return state.gramsPerKWh }
+        if let state = stateCode.flatMap({ states?[$0] }) { return state.gramsPerKWh }
         return regionCode.flatMap { GridData.gramsPerKWh[$0] }
-    }
-
-    var defaultPrice: Double? {
-        if let zipPrice { return zipPrice }
-        if let state = stateCode.flatMap({ GridData.usStates[$0] }) { return state.price }
-        return regionCode.flatMap { GridData.prices[$0]?.amount }
-    }
-
-    var currencyCode: String {
-        regionCode.flatMap { GridData.prices[$0]?.currency } ?? Locale.current.currency?.identifier ?? "USD"
     }
 
     var rates: GridRates {
@@ -157,9 +134,7 @@ final class GridModel: NSObject, CLLocationManagerDelegate {
                   stateCode: stateCode,
                   placeName: placeName,
                   gridName: gridName,
-                  gramsPerKWh: customIntensity ?? defaultIntensity,
-                  pricePerKWh: customPrice ?? defaultPrice,
-                  currencyCode: currencyCode)
+                  gramsPerKWh: customIntensity ?? defaultIntensity)
     }
 
     // MARK: Location
@@ -178,15 +153,12 @@ final class GridModel: NSObject, CLLocationManagerDelegate {
         geocoder.cancelGeocode()
         geocoder.reverseGeocodeLocation(location) { [weak self] placemarks, _ in
             guard let place = placemarks?.first, let code = place.isoCountryCode else { return }
-            // For the US, `administrativeArea` is the state's postal abbreviation ("CA").
-            let state = code == "US" ? place.administrativeArea : nil
+            // `administrativeArea` is the state's or province's abbreviation ("CA", "ON", "NSW").
+            let state = place.administrativeArea
             let zip = code == "US" ? place.postalCode.map { String($0.prefix(5)) } : nil
             Task { @MainActor in
                 guard let self else { return }
                 let subregion = zip.flatMap { GridData.subregion(forZIP: $0) }
-                let price = zip.flatMap { GridData.price(forZIP: $0) }
-                self.locatedPrice = price
-                self.store(price, forKey: Keys.locatedPrice)
                 self.locatedRegion = code
                 self.locatedState = state
                 self.locatedSubregion = subregion

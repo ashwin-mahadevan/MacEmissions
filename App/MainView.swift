@@ -6,14 +6,32 @@ struct MainView: View {
 
     var body: some View {
         Group {
-            if let snapshot = sampler.snapshot {
+            if let snapshot = sampler.snapshot, Self.showsPanel {
+                PanelContent(snapshot: snapshot)
+                    .frame(width: 320)
+                    .fixedSize()
+            } else if let snapshot = sampler.snapshot {
                 Dashboard(snapshot: snapshot, days: sampler.days)
             } else {
                 NoDataView(hasBattery: sampler.hasBattery)
             }
         }
-        .frame(minWidth: 440, idealWidth: 760, minHeight: 400, idealHeight: 920)
+        .frame(minWidth: Self.showsPanel ? 320 : 440, idealWidth: 760,
+               minHeight: Self.showsPanel ? 200 : 400, idealHeight: 920)
+        #if DEBUG
+        .preferredColorScheme(ProcessInfo.processInfo.arguments.contains("-demo-dark") ? .dark : nil)
+        #endif
     }
+
+    /// `-demo-panel` (debug builds only) shows the menu bar panel's content in the window,
+    /// for App Store screenshots.
+    private static let showsPanel: Bool = {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains("-demo-panel")
+        #else
+        false
+        #endif
+    }()
 }
 
 /// Everything the main window shows for one reading. Two columns when there's room, one when not.
@@ -32,7 +50,7 @@ struct Dashboard: View {
                 VStack(spacing: Self.spacing) {
                     pair {
                         HeroCard(snapshot: snapshot)
-                        ElectricityCard(rates: snapshot.rates, priceText: snapshot.priceText)
+                        ElectricityCard(rates: snapshot.rates)
                     }
                     .fixedSize(horizontal: false, vertical: true)
 

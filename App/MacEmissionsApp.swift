@@ -19,6 +19,12 @@ struct MacEmissionsApp: App {
                 .environment(sampler)
         }
         .defaultSize(width: 760, height: 920)
+        .commands {
+            CommandGroup(replacing: .help) {
+                Link("MacEmissions Support", destination: URL(string: "https://ashwinm.com/MacEmissions")!)
+                Link("Privacy Policy", destination: URL(string: "https://ashwinm.com/MacEmissions/privacy")!)
+            }
+        }
 
         Settings {
             SettingsView()

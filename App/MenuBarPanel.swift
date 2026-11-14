@@ -2,7 +2,7 @@ import SwiftUI
 
 /// What the menu bar item shows next to its symbol. Chosen in Settings.
 enum MenuBarMetric: String, CaseIterable, Identifiable {
-    case emissionsToday, emissionsRate, power, costToday
+    case emissionsToday, emissionsRate, power
 
     var id: Self { self }
 
@@ -11,7 +11,6 @@ enum MenuBarMetric: String, CaseIterable, Identifiable {
         case .emissionsToday: "Emissions Today"
         case .emissionsRate: "Emissions per Hour"
         case .power: "Power Now"
-        case .costToday: "Cost Today"
         }
     }
 
@@ -24,8 +23,6 @@ enum MenuBarMetric: String, CaseIterable, Identifiable {
             if let grams = snapshot.gramsPerHour { return grams.co2.perHour.text }
         case .emissionsToday:
             if let grams = snapshot.emissionsGrams { return grams.co2.text }
-        case .costToday:
-            if let cost = snapshot.costText { return cost }
         }
         return snapshot.systemWatts.wattsText
     }

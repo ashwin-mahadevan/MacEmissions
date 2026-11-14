@@ -34,6 +34,14 @@ final class PowerSampler {
 
     init(grid: GridModel) {
         self.grid = grid
+        #if DEBUG
+        // `-demo` shows sample figures and records nothing. Used for App Store screenshots.
+        if ProcessInfo.processInfo.arguments.contains("-demo") {
+            snapshot = .preview
+            days = DayRecord.preview
+            return
+        }
+        #endif
         if defaults.object(forKey: "energyDay") as? Date == day {
             energyWh = defaults.double(forKey: "energyTodayWh")
         }
@@ -90,8 +98,7 @@ final class PowerSampler {
             defaults.set(energyWh, forKey: "energyTodayWh")
             let rates = snap.rates
             days = DayStore.updating(days, with: DayRecord(
-                day: day, energyWh: energyWh, gramsPerKWh: rates?.gramsPerKWh,
-                pricePerKWh: rates?.pricePerKWh, currencyCode: rates?.currencyCode))
+                day: day, energyWh: energyWh, gramsPerKWh: rates?.gramsPerKWh))
             DayStore.save(days)
             lastWidgetSave = now
         }

@@ -4,10 +4,10 @@ import Foundation
 enum GridData {
     /// Carbon intensity of electricity generation, in grams of CO₂-equivalent per kWh.
     ///
-    /// Source: Our World in Data, "Carbon intensity of electricity generation"
-    /// (data from Ember and the Energy Institute), latest year, labelled 2025.
+    /// Source: Ember (2026), with major processing by Our World in Data, "Lifecycle carbon
+    /// intensity of electricity generation", latest year. Lifecycle basis, all greenhouse gases.
     /// https://ourworldindata.org/grapher/carbon-intensity-electricity
-    /// Fetched 2026-11-12. Check the dataset's licence and attribution wording before release.
+    /// Fetched 2026-11-12. Licensed CC BY 4.0; credit as worded above.
     static let gramsPerKWh: [String: Double] = [
         "AF": 131.31, "AL": 25.18, "DZ": 632.94, "AO": 185.38, "AG": 594.6, "AR": 346, "AM": 211.93,
         "AU": 525.18, "AT": 116.91, "AZ": 631.9, "BS": 653.33, "BH": 902.24, "BD": 696.13, "BB": 594.6,
@@ -39,55 +39,33 @@ enum GridData {
         "ZM": 119.68, "ZW": 384.02,
     ]
 
-    /// A typical household electricity price per kWh, in the local currency.
-    ///
-    /// PLACEHOLDERS: rough 2024–2025 figures written from memory, not taken from a dataset.
-    /// Replace with sourced figures (for example EIA for the US, Eurostat for the EU) before
-    /// release. Countries not listed have no default; the user enters their own price in Settings.
-    /// The US figure is sourced: EIA Electric Power Monthly, Table 5.6.B, residential,
-    /// January–August 2026 year-to-date.
-    static let prices: [String: (amount: Double, currency: String)] = [
-        "US": (0.1819, "USD"), "CA": (0.17, "CAD"), "GB": (0.26, "GBP"), "IE": (0.37, "EUR"),
-        "FR": (0.25, "EUR"), "DE": (0.39, "EUR"), "ES": (0.25, "EUR"), "PT": (0.25, "EUR"),
-        "IT": (0.33, "EUR"), "NL": (0.30, "EUR"), "BE": (0.35, "EUR"), "AT": (0.31, "EUR"),
-        "FI": (0.22, "EUR"), "GR": (0.23, "EUR"), "CH": (0.29, "CHF"), "SE": (2.0, "SEK"),
-        "NO": (1.5, "NOK"), "DK": (2.8, "DKK"), "PL": (1.1, "PLN"), "CZ": (7.5, "CZK"),
-        "AU": (0.33, "AUD"), "NZ": (0.33, "NZD"), "JP": (31, "JPY"), "KR": (150, "KRW"),
-        "CN": (0.55, "CNY"), "TW": (2.8, "TWD"), "SG": (0.30, "SGD"), "IN": (7, "INR"),
-        "BR": (0.85, "BRL"), "IL": (0.64, "ILS"), "SA": (0.18, "SAR"), "ID": (1445, "IDR"),
-        "TH": (4.2, "THB"), "VN": (2200, "VND"), "PH": (12, "PHP"),
-    ]
-
     /// US states and DC, keyed by postal abbreviation.
     ///
-    /// - gramsPerKWh: EPA eGRID2023 (Revision 2), Summary Table 3 "State Output Emission Rates",
-    ///   total output CO₂e rate, converted from lb/MWh (× 0.45359237). This is the rate of power
-    ///   generated inside the state; it ignores imports, and counts combustion only, so it is not
-    ///   directly comparable with the lifecycle country figures above.
-    ///   https://www.epa.gov/egrid/summary-data
-    /// - price: EIA Electric Power Monthly, Table 5.6.B, average residential price,
-    ///   January–August 2026 year-to-date (preliminary), in US dollars per kWh.
-    ///   https://www.eia.gov/electricity/monthly/epm_table_grapher.php?t=epmt_5_6_b
-    static let usStates: [String: (name: String, gramsPerKWh: Double, price: Double)] = [
-        "AL": ("Alabama", 323.9, 0.1651), "AK": ("Alaska", 369.4, 0.2732), "AZ": ("Arizona", 312.6, 0.1536),
-        "AR": ("Arkansas", 452.9, 0.1374), "CA": ("California", 179.1, 0.3258), "CO": ("Colorado", 494.9, 0.1680),
-        "CT": ("Connecticut", 245.2, 0.2747), "DE": ("Delaware", 319.4, 0.1798),
-        "DC": ("District of Columbia", 179.2, 0.2486), "FL": ("Florida", 357.9, 0.1532),
-        "GA": ("Georgia", 325.4, 0.1548), "HI": ("Hawaii", 632.6, 0.4641), "ID": ("Idaho", 142.4, 0.1302),
-        "IL": ("Illinois", 215.2, 0.1923), "IN": ("Indiana", 664.7, 0.1704), "IA": ("Iowa", 287.6, 0.1455),
-        "KS": ("Kansas", 332.6, 0.1526), "KY": ("Kentucky", 792.4, 0.1420), "LA": ("Louisiana", 346.1, 0.1327),
-        "ME": ("Maine", 143.7, 0.3023), "MD": ("Maryland", 236.9, 0.2131), "MA": ("Massachusetts", 376.5, 0.3019),
-        "MI": ("Michigan", 361.7, 0.2173), "MN": ("Minnesota", 341.3, 0.1644), "MS": ("Mississippi", 375.7, 0.1506),
-        "MO": ("Missouri", 659.8, 0.1428), "MT": ("Montana", 482.6, 0.1413), "NE": ("Nebraska", 465.3, 0.1292),
-        "NV": ("Nevada", 292.0, 0.1336), "NH": ("New Hampshire", 125.3, 0.2691), "NJ": ("New Jersey", 213.3, 0.2409),
-        "NM": ("New Mexico", 350.9, 0.1534), "NY": ("New York", 211.7, 0.2926),
-        "NC": ("North Carolina", 284.1, 0.1494), "ND": ("North Dakota", 588.7, 0.1246), "OH": ("Ohio", 484.6, 0.1881),
-        "OK": ("Oklahoma", 294.3, 0.1381), "OR": ("Oregon", 165.5, 0.1546), "PA": ("Pennsylvania", 293.9, 0.2113),
-        "RI": ("Rhode Island", 381.0, 0.2905), "SC": ("South Carolina", 254.2, 0.1590),
-        "SD": ("South Dakota", 152.2, 0.1458), "TN": ("Tennessee", 299.9, 0.1380), "TX": ("Texas", 349.8, 0.1603),
-        "UT": ("Utah", 644.7, 0.1319), "VT": ("Vermont", 23.7, 0.2393), "VA": ("Virginia", 244.8, 0.1695),
-        "WA": ("Washington", 120.9, 0.1442), "WV": ("West Virginia", 893.1, 0.1558),
-        "WI": ("Wisconsin", 527.8, 0.1905), "WY": ("Wyoming", 831.6, 0.1401),
+    /// gramsPerKWh: EPA eGRID2023 (Revision 2), Summary Table 3 "State Output Emission Rates",
+    /// total output CO₂e rate, converted from lb/MWh (× 0.45359237). This is the rate of power
+    /// generated inside the state; it ignores imports, and counts combustion only, so it is not
+    /// directly comparable with the lifecycle country figures above.
+    /// https://www.epa.gov/egrid/summary-data
+    static let usStates: [String: (name: String, gramsPerKWh: Double)] = [
+        "AL": ("Alabama", 323.9), "AK": ("Alaska", 369.4), "AZ": ("Arizona", 312.6),
+        "AR": ("Arkansas", 452.9), "CA": ("California", 179.1), "CO": ("Colorado", 494.9),
+        "CT": ("Connecticut", 245.2), "DE": ("Delaware", 319.4),
+        "DC": ("District of Columbia", 179.2), "FL": ("Florida", 357.9),
+        "GA": ("Georgia", 325.4), "HI": ("Hawaii", 632.6), "ID": ("Idaho", 142.4),
+        "IL": ("Illinois", 215.2), "IN": ("Indiana", 664.7), "IA": ("Iowa", 287.6),
+        "KS": ("Kansas", 332.6), "KY": ("Kentucky", 792.4), "LA": ("Louisiana", 346.1),
+        "ME": ("Maine", 143.7), "MD": ("Maryland", 236.9), "MA": ("Massachusetts", 376.5),
+        "MI": ("Michigan", 361.7), "MN": ("Minnesota", 341.3), "MS": ("Mississippi", 375.7),
+        "MO": ("Missouri", 659.8), "MT": ("Montana", 482.6), "NE": ("Nebraska", 465.3),
+        "NV": ("Nevada", 292.0), "NH": ("New Hampshire", 125.3), "NJ": ("New Jersey", 213.3),
+        "NM": ("New Mexico", 350.9), "NY": ("New York", 211.7),
+        "NC": ("North Carolina", 284.1), "ND": ("North Dakota", 588.7), "OH": ("Ohio", 484.6),
+        "OK": ("Oklahoma", 294.3), "OR": ("Oregon", 165.5), "PA": ("Pennsylvania", 293.9),
+        "RI": ("Rhode Island", 381.0), "SC": ("South Carolina", 254.2),
+        "SD": ("South Dakota", 152.2), "TN": ("Tennessee", 299.9), "TX": ("Texas", 349.8),
+        "UT": ("Utah", 644.7), "VT": ("Vermont", 23.7), "VA": ("Virginia", 244.8),
+        "WA": ("Washington", 120.9), "WV": ("West Virginia", 893.1),
+        "WI": ("Wisconsin", 527.8), "WY": ("Wyoming", 831.6),
     ]
 
     /// EPA eGRID subregions: the parts of the US grid that EPA reports emissions for. Each has
@@ -125,21 +103,7 @@ enum GridData {
         zipSubregions.value(forZIP: zip)
     }
 
-    /// The average residential price per kWh, in US dollars, of the utilities serving a ZIP code,
-    /// or nil if none is listed.
-    ///
-    /// From "U.S. Electric Utility Companies and Rates: Look-up by Zip Code (2025)", National
-    /// Laboratory of the Rockies, built on EIA Form 861 data. https://data.openei.org/submissions/10259
-    /// Bundled as `ZipPrices.txt` in hundredths of a cent. Each utility has one average rate for
-    /// its whole territory, matched to its "likely" ZIP codes. Only bundled-service rates are
-    /// used (delivery-only rates leave out the energy itself), and where several utilities serve
-    /// a ZIP code their rates are averaged without weighting.
-    static func price(forZIP zip: String) -> Double? {
-        zipPrices.value(forZIP: zip).flatMap { Double($0) }.map { $0 / 10_000 }
-    }
-
     private static let zipSubregions = ZIPTable(resource: "ZipSubregions")
-    private static let zipPrices = ZIPTable(resource: "ZipPrices")
 
     /// A bundled text file with one line per run of consecutive listed ZIP codes that share a
     /// value, as "first last value".
@@ -177,9 +141,54 @@ enum GridData {
         }
     }
 
-    static let usStateList: [(code: String, name: String)] = usStates
-        .map { (code: $0.key, name: $0.value.name) }
-        .sorted { $0.name < $1.name }
+    /// Canadian provinces and territories: grid electricity consumption intensity, g CO₂e per kWh.
+    ///
+    /// Environment and Climate Change Canada, "Canada's Greenhouse Gas Offset Credit System:
+    /// Emission Factors and Reference Values", Version 4.0 (September 2026), Table 5.4, which
+    /// draws on the National Inventory Report 1990–2024.
+    /// https://publications.gc.ca/collections/collection_2026/eccc/En84-294-2026-eng.pdf
+    static let canadianProvinces: [String: (name: String, gramsPerKWh: Double)] = [
+        "AB": ("Alberta", 346), "BC": ("British Columbia", 18), "MB": ("Manitoba", 3.0),
+        "NB": ("New Brunswick", 375), "NL": ("Newfoundland and Labrador", 17),
+        "NS": ("Nova Scotia", 628), "NT": ("Northwest Territories", 490), "NU": ("Nunavut", 760),
+        "ON": ("Ontario", 73), "PE": ("Prince Edward Island", 265), "QC": ("Quebec", 2.6),
+        "SK": ("Saskatchewan", 581), "YT": ("Yukon", 134),
+    ]
+
+    /// Australian states and territories: scope 2 location-based factor for purchased grid
+    /// electricity, converted from kg CO₂-e per kWh.
+    ///
+    /// Australian Government DCCEEW, "National Greenhouse Accounts Factors 2026", Table 1
+    /// (7 October 2026 revision). New South Wales and the ACT share a figure. Western Australia
+    /// uses the South West Interconnected System (the North West system is 560), and the
+    /// Northern Territory uses the Darwin–Katherine system.
+    /// https://www.dcceew.gov.au/climate-change/publications/national-greenhouse-accounts-factors-2026
+    static let australianStates: [String: (name: String, gramsPerKWh: Double)] = [
+        "ACT": ("Australian Capital Territory", 600), "NSW": ("New South Wales", 600),
+        "NT": ("Northern Territory", 550), "QLD": ("Queensland", 650), "SA": ("South Australia", 210),
+        "TAS": ("Tasmania", 210), "VIC": ("Victoria", 740), "WA": ("Western Australia", 450),
+    ]
+
+    /// Countries with figures for their states, provinces or territories, keyed by country
+    /// and then by the abbreviation the system's geocoder reports ("CA", "ON", "NSW").
+    static let states: [String: [String: (name: String, gramsPerKWh: Double)]] = [
+        "US": usStates, "CA": canadianProvinces, "AU": australianStates,
+    ]
+
+    /// What a country calls its states, for labels.
+    static func stateLabel(for country: String) -> String {
+        switch country {
+        case "CA": "Province"
+        case "AU": "State or Territory"
+        default: "State"
+        }
+    }
+
+    static func stateList(for country: String) -> [(code: String, name: String)] {
+        (states[country] ?? [:])
+            .map { (code: $0.key, name: $0.value.name) }
+            .sorted { $0.name < $1.name }
+    }
 
     /// Every region with a carbon-intensity figure, sorted by its name in the user's language.
     static let regions: [(code: String, name: String)] = gramsPerKWh.keys

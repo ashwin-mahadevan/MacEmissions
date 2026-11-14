@@ -124,7 +124,7 @@ struct DetailRow: View {
 
 // MARK: - The four tiles
 
-/// Power now, emissions now, energy today and cost today.
+/// Power now, emissions now, energy today and the grid's carbon intensity.
 struct StatTiles: View {
     var snapshot: PowerSnapshot
     var columns = 4
@@ -160,9 +160,11 @@ struct StatTiles: View {
                      caption: "Since midnight",
                      compact: compact)
         default:
-            StatTile(title: "Cost Today", symbol: "banknote.fill", color: .mint,
-                     quantity: snapshot.costText.map { Quantity(value: $0) },
-                     caption: snapshot.costPerHourText.map { "\($0) per hour now" } ?? "Price not set",
+            StatTile(title: "Grid Intensity", symbol: "leaf.fill", color: .mint,
+                     quantity: snapshot.rates?.gramsPerKWh.map {
+                         Quantity(value: $0.formatted(.number.precision(.fractionLength(0))), unit: "g/kWh")
+                     },
+                     caption: snapshot.rates?.gramsPerKWh == nil ? "Region not set" : "CO₂e per kWh of electricity",
                      compact: compact)
         }
     }
@@ -248,10 +250,9 @@ struct IntensityScale: View {
     }
 }
 
-/// The electricity the estimates are based on: place, grid, carbon intensity and price.
+/// The electricity the estimates are based on: place, grid, and carbon intensity.
 struct ElectricityCard: View {
     var rates: GridRates?
-    var priceText: String?
 
     var body: some View {
         Card {
@@ -279,24 +280,19 @@ struct ElectricityCard: View {
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                HStack {
-                    if let grams = rates?.gramsPerKWh {
-                        Text("\(grams.formatted(.number.precision(.fractionLength(0)))) g CO₂e per kWh")
-                    }
-                    Spacer()
-                    Text(priceText ?? "Price not set")
+                if let grams = rates?.gramsPerKWh {
+                    Text("\(grams.formatted(.number.precision(.fractionLength(0)))) g CO₂e per kWh")
+                        .font(.callout)
+                        .monospacedDigit()
+                        .lineLimit(1)
                 }
-                .font(.callout)
-                .monospacedDigit()
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
             }
         }
     }
 
     private var subtitle: String {
         if let grid = rates?.gridName { return "\(grid) grid" }
-        return rates?.stateCode == nil ? "National average" : "State average"
+        return rates?.stateCode == nil ? "National average" : "Regional average"
     }
 }
 

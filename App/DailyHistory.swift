@@ -6,12 +6,9 @@ struct DayRecord: Codable, Equatable, Identifiable {
     var day: Date               // start of the day
     var energyWh: Double
     var gramsPerKWh: Double?
-    var pricePerKWh: Double?
-    var currencyCode: String?
 
     var id: Date { day }
     var emissionsGrams: Double? { gramsPerKWh.map { energyWh / 1000 * $0 } }
-    var cost: Double? { pricePerKWh.map { energyWh / 1000 * $0 } }
 }
 
 /// The last 30 days of records, kept in the app's preferences.
@@ -122,13 +119,9 @@ struct DailyCard: View {
 
     private var summary: String? {
         guard !visible.isEmpty else { return nil }
-        var parts = [showsEmissions ? visible.compactMap(\.emissionsGrams).reduce(0, +).co2.text
-                                    : visible.map(\.energyWh).reduce(0, +).wattHours.text]
-        let currencies = Set(visible.compactMap(\.currencyCode))
-        if visible.allSatisfy({ $0.pricePerKWh != nil }), currencies.count == 1, let code = currencies.first {
-            parts.append(visible.compactMap(\.cost).reduce(0, +).costText(code))
-        }
-        return "Total " + parts.joined(separator: " · ")
+        let total = showsEmissions ? visible.compactMap(\.emissionsGrams).reduce(0, +).co2.text
+                                   : visible.map(\.energyWh).reduce(0, +).wattHours.text
+        return "Total \(total)"
     }
 }
 
@@ -138,6 +131,6 @@ extension DayRecord {
         let today = Calendar.current.startOfDay(for: .now)
         let day = Calendar.current.date(byAdding: .day, value: offset - 29, to: today) ?? today
         let energy: Double = 90 + 60 * sin(Double(offset) / 2.3) + Double((offset * 37) % 50)
-        return DayRecord(day: day, energyWh: energy, gramsPerKWh: 195, pricePerKWh: 0.3258, currencyCode: "USD")
+        return DayRecord(day: day, energyWh: energy, gramsPerKWh: 195)
     }
 }

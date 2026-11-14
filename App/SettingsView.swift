@@ -31,7 +31,7 @@ private struct GeneralSettings: View {
                 }
                 .disabled(!showInMenuBar)
             } footer: {
-                Text("Emissions and cost fall back to power when your electricity's figures aren't set.")
+                Text("Emissions fall back to power when your region's carbon figure isn't set.")
             }
 
             Section {
@@ -53,7 +53,7 @@ private struct GeneralSettings: View {
     }
 }
 
-/// Where the Mac is, and the carbon intensity and price of its electricity.
+/// Where the Mac is, and the carbon intensity of its electricity.
 private struct ElectricitySettings: View {
     @Environment(GridModel.self) private var grid
 
@@ -69,16 +69,16 @@ private struct ElectricitySettings: View {
                         Text(region.name).tag(region.code)
                     }
                 }
-                if grid.regionCode == "US" {
-                    Picker("State", selection: $grid.stateOverride) {
+                if let country = grid.regionCode, GridData.states[country] != nil {
+                    Picker(GridData.stateLabel(for: country), selection: $grid.stateOverride) {
                         Text(automaticStateTitle).tag("")
                         Text("National Average").tag(GridModel.nationalAverage)
                         Divider()
-                        ForEach(GridData.usStateList, id: \.code) { state in
+                        ForEach(GridData.stateList(for: country), id: \.code) { state in
                             Text(state.name).tag(state.code)
                         }
                     }
-                    if grid.stateOverride != GridModel.nationalAverage {
+                    if country == "US", grid.stateOverride != GridModel.nationalAverage {
                         TextField("ZIP Code", text: $grid.zipOverride,
                                   prompt: Text(grid.locationAccess == .allowed ? "From your location" : "Optional"))
                         LabeledContent("Grid Region", value: grid.gridName ?? "State average")
@@ -88,23 +88,21 @@ private struct ElectricitySettings: View {
             } header: {
                 Text("Location")
             } footer: {
-                Text("Your location is used only to find your country and, in the US, your state, grid region and local price. Your coordinates, and the ZIP code found from them, aren't kept.")
+                Text("Your location is used only to find your country, your state or province and, in the US, your grid region. Your coordinates, and the ZIP code found from them, aren't kept.")
             }
 
             Section {
-                TextField("Price per kWh (\(grid.currencyCode))", value: $grid.customPrice, format: .number,
-                          prompt: Text(grid.defaultPrice?.formatted() ?? "Not set"))
-                TextField("Carbon Intensity (g CO₂e/kWh)", value: $grid.customIntensity, format: .number,
+                TextField("Your Own Figure (g CO₂e/kWh)", value: $grid.customIntensity, format: .number,
                           prompt: Text(grid.defaultIntensity?.formatted(.number.precision(.fractionLength(0))) ?? "Not set"))
             } header: {
-                Text("Rates")
+                Text("Carbon Intensity")
             } footer: {
                 Text("""
-                    Leave a field empty to use the figure for your region: the average carbon intensity of its \
-                    electricity and a typical household price. Enter your own if you know your tariff.
+                    Leave this empty to use the average carbon intensity of your grid's electricity. Enter \
+                    your own if your supplier publishes one.
 
-                    Data: Ember and Energy Institute via Our World in Data (countries); EPA eGRID, EIA and \
-                    National Laboratory of the Rockies (US).
+                    Data: Ember (2026), with major processing by Our World in Data (countries); EPA eGRID (US); \
+                    Environment and Climate Change Canada; Australian Government DCCEEW.
                     """)
             }
         }
@@ -119,7 +117,7 @@ private struct ElectricitySettings: View {
     }
 
     private var automaticStateTitle: String {
-        guard let name = grid.detectedState.flatMap({ GridData.usStates[$0]?.name }) else {
+        guard let name = grid.detectedState.flatMap({ state in grid.regionCode.flatMap { GridData.states[$0]?[state]?.name } }) else {
             return "Automatic (needs your location)"
         }
         return "Automatic (\(name))"

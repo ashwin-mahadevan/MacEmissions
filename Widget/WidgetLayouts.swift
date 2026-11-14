@@ -32,21 +32,11 @@ struct MediumWidget: View {
                 }
                 HStack(spacing: 12) {
                     WidgetStat(title: "Energy Today", value: snapshot.energyText)
-                    if let cost = snapshot.costText {
-                        WidgetStat(title: "Cost Today", value: cost)
+                    if let grams = snapshot.gramsPerHour {
+                        WidgetStat(title: "Emitting Now", value: grams.co2.perHour.text)
                     }
                 }
-                if snapshot.history.count <= 1 {
-                    HStack(spacing: 12) {
-                        if let grams = snapshot.gramsPerHour {
-                            WidgetStat(title: "Emitting Now", value: grams.co2.perHour.text)
-                        }
-                        if let cost = snapshot.costPerHourText {
-                            WidgetStat(title: "Cost per Hour", value: cost)
-                        }
-                    }
-                    Spacer(minLength: 0)
-                }
+                if snapshot.history.count <= 1 { Spacer(minLength: 0) }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         }
@@ -75,8 +65,8 @@ struct LargeWidget: View {
                     WidgetStat(title: "Energy Today", value: snapshot.energyText)
                 }
                 GridRow {
-                    WidgetStat(title: "Cost Today", value: snapshot.costText ?? "–")
-                    WidgetStat(title: "Cost per Hour", value: snapshot.costPerHourText ?? "–")
+                    WidgetStat(title: "Power Now", value: snapshot.systemWatts.wattsText)
+                    WidgetStat(title: "Source", value: snapshot.sourceTitle)
                 }
             }
             if let footer {

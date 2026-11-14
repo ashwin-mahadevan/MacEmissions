@@ -163,6 +163,6 @@ extension PowerSnapshot {
         },
         energyWh: 96, energySince: Calendar.current.startOfDay(for: .now),
         rates: GridRates(regionCode: "US", stateCode: "CA", placeName: "California",
-                         gridName: "WECC California", gramsPerKWh: 195.0, pricePerKWh: 0.3258, currencyCode: "USD"),
+                         gridName: "WECC California", gramsPerKWh: 195.0),
         cpuLoadPercent: 18, thermalState: .nominal, lowPowerMode: false, measuredAt: .now.addingTimeInterval(-23))
 }
