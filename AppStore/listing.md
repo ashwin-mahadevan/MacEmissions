@@ -45,7 +45,7 @@ PRIVATE BY DESIGN
 • Location is optional and used only to find your grid. Your coordinates are never stored. You can pick your region by hand instead.
 
 GOOD TO KNOW
-• MacEmissions needs a Mac with a battery. macOS doesn't report power use on desktop Macs.
+• Mac laptops report their real power draw. On desktop Macs (Mac mini, iMac, Mac Studio, Mac Pro), macOS doesn't report power use, so MacEmissions estimates it from Apple's published figures for your model and how busy the processor is, and labels it as an estimate.
 • Emissions are estimates based on yearly average figures for your grid, not a live reading of the grid's mix.
 • Totals are counted while the app is running. Turn on Open at Login to count the whole day.
 
@@ -71,7 +71,7 @@ carbon,co2,energy,power,watts,battery,climate,footprint,electricity,grid,menu ba
 
 ## Notes for App Review
 
-MacEmissions reads the Mac's power draw from the public IOKit AppleSmartBattery registry entry, so it needs a Mac laptop; on a desktop Mac it shows "No Power Data".
+On a Mac laptop, MacEmissions reads the power draw from the public IOKit AppleSmartBattery registry entry. Desktop Macs have no such entry, so the app estimates the draw from Apple's published idle and maximum wattage for the model (Apple Support power consumption pages) and CPU load, and labels it "Estimated". A desktop model not in the built-in table shows "No Power Data".
 
 Location (When In Use) is requested once at first launch, only to find which electricity grid the Mac is on. It is reverse-geocoded with CLGeocoder to a country, a state or province and, in the US, a ZIP code that is matched to an EPA grid subregion using a table bundled in the app. Coordinates and the ZIP code are not stored, and the app has no network entitlement. If location is declined, the app uses the Mac's region setting, and the region can be chosen in Settings > Electricity.
 

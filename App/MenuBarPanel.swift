@@ -87,7 +87,10 @@ struct PanelContent: View {
             }
             Card(padding: 10) {
                 VStack(alignment: .leading, spacing: 8) {
-                    if snapshot.onCharger {
+                    if snapshot.isEstimate {
+                        DetailRow(symbol: "desktopcomputer", title: snapshot.modelName ?? "This Mac",
+                                  detail: "Estimated from CPU load", value: snapshot.systemWatts.wattsText)
+                    } else if snapshot.onCharger {
                         DetailRow(symbol: "powerplug.fill", title: "Power Adapter", detail: snapshot.adapterText,
                                   value: (snapshot.chargerInputWatts ?? snapshot.fromChargerWatts).wattsText)
                     }

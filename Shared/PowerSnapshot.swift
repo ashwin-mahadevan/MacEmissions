@@ -20,12 +20,17 @@ struct PowerSnapshot: Codable, Equatable {
     var history: [HistoryPoint] = [] // total watts over the last ~30 minutes
     var energyWh: Double = 0         // energy used today, while the app was running
     var energySince: Date = .now     // the start of that day
-    var rates: GridRates?            // carbon intensity and price of the local electricity
+    var rates: GridRates?            // carbon intensity of the local electricity
 
     var cpuLoadPercent: Double?      // whole-system CPU busy %, all cores
     var thermalState: ThermalState
     var lowPowerMode: Bool
     var measuredAt: Date?            // when macOS last refreshed the battery's power figures
+    /// Set when the Mac has no battery and the draw is estimated from CPU load (see `DesktopEstimate`).
+    var estimated: Bool?
+    var modelName: String?           // "Mac mini (2024)", for estimates
+
+    var isEstimate: Bool { estimated == true }
 
     /// Power flowing from the battery into the computer.
     var fromBatteryWatts: Double { max(0, -(batteryWatts ?? 0)) }
@@ -34,10 +39,11 @@ struct PowerSnapshot: Codable, Equatable {
     /// Power flowing from the power adapter into the battery.
     var intoBatteryWatts: Double { max(0, batteryWatts ?? 0) }
 
-    /// A reading taken right now from public, sandbox-safe sources.
-    /// Returns nil on Macs without a battery, or before macOS has a power figure.
+    /// A reading taken right now from public, sandbox-safe sources: measured on Macs with a
+    /// battery, estimated on desktop Macs Apple publishes figures for.
+    /// Returns nil for other Macs, or before macOS has a power figure.
     static func measure(cpuLoadPercent: Double? = nil) -> PowerSnapshot? {
-        guard let b = BatteryReading.read() else { return nil }
+        guard let b = BatteryReading.read() else { return estimate(cpuLoadPercent: cpuLoadPercent) }
         // Total draw: battery telemetry, or the battery's own discharge rate when unplugged.
         var total = b.systemLoadWatts
         if total ?? 0 <= 0, !b.onCharger, let w = b.batteryWatts, w < 0 { total = -w }
@@ -54,6 +60,21 @@ struct PowerSnapshot: Codable, Equatable {
             thermalState: ThermalState(info.thermalState),
             lowPowerMode: info.isLowPowerModeEnabled,
             measuredAt: b.updatedAt)
+    }
+}
+
+extension PowerSnapshot {
+    /// An estimated reading for a desktop Mac, or nil if there are no figures for this model.
+    static func estimate(cpuLoadPercent: Double?, model: MacModel = .current) -> PowerSnapshot? {
+        guard let figures = DesktopEstimate.figures(for: model) else { return nil }
+        let info = ProcessInfo.processInfo
+        return PowerSnapshot(
+            date: .now, systemWatts: DesktopEstimate.watts(figures, cpuLoadPercent: cpuLoadPercent),
+            onCharger: true, isCharging: false,
+            cpuLoadPercent: cpuLoadPercent,
+            thermalState: ThermalState(info.thermalState),
+            lowPowerMode: info.isLowPowerModeEnabled,
+            estimated: true, modelName: model.name)
     }
 }
 
@@ -107,7 +128,7 @@ enum SharedStore {
 }
 
 extension PowerSnapshot {
-    var sourceTitle: String { onCharger ? "Power Adapter" : "Battery" }
+    var sourceTitle: String { isEstimate ? "Mains Power" : onCharger ? "Power Adapter" : "Battery" }
     var sourceSymbol: String { onCharger ? "powerplug.fill" : "battery.75percent" }
 
     var adapterText: String? {

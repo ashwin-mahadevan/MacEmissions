@@ -8,6 +8,7 @@ import WidgetKit
 /// Uses only public APIs that work inside the App Sandbox:
 /// - Total draw and sources: the battery's entry in the I/O Registry (`BatteryReading`).
 ///   macOS refreshes those figures about once a minute, so readings move in steps.
+///   Desktop Macs have no such entry; their draw is estimated (`DesktopEstimate`).
 /// - CPU load: `host_statistics`.
 /// - Thermal state and Low Power Mode: `ProcessInfo`.
 @MainActor @Observable
@@ -62,7 +63,13 @@ final class PowerSampler {
         lastTick = now
 
         let load = cpuLoad.sample()
-        guard var snap = PowerSnapshot.measure(cpuLoadPercent: load) else {
+        var reading = PowerSnapshot.measure(cpuLoadPercent: load)
+        #if DEBUG
+        if UserDefaults.standard.string(forKey: "demoDesktop") != nil {
+            reading = PowerSnapshot.estimate(cpuLoadPercent: load)
+        }
+        #endif
+        guard var snap = reading else {
             hasBattery = BatteryReading.read() != nil
             return
         }

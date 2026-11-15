@@ -78,7 +78,9 @@ struct Dashboard: View {
 
     private var footnote: some View {
         Group {
-            if let measuredAt = snapshot.measuredAt {
+            if snapshot.isEstimate {
+                Text("Power is estimated from CPU load and Apple's published figures for this Mac. Today's totals count only while MacEmissions is running.")
+            } else if let measuredAt = snapshot.measuredAt {
                 Text("Measured by macOS \(measuredAt, style: .relative) ago. Today's totals count only while MacEmissions is running.")
             } else {
                 Text("Today's totals count only while MacEmissions is running.")

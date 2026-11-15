@@ -147,7 +147,8 @@ struct StatTiles: View {
         case 0:
             StatTile(title: "Power Now", symbol: "bolt.fill", color: .orange,
                      quantity: snapshot.systemWatts.watts,
-                     caption: snapshot.onCharger ? "From the power adapter" : "From the battery",
+                     caption: snapshot.isEstimate ? "Estimated from CPU load"
+                         : snapshot.onCharger ? "From the power adapter" : "From the battery",
                      compact: compact)
         case 1:
             StatTile(title: "Emitting Now", symbol: "carbon.dioxide.cloud.fill", color: .green,
@@ -351,7 +352,14 @@ struct SourceCard: View {
         Card {
             VStack(alignment: .leading, spacing: 12) {
                 CardTitle(title: "Power Source", symbol: "powerplug.fill", color: .orange)
-                if snapshot.onCharger {
+                if snapshot.isEstimate {
+                    DetailRow(symbol: "powerplug.fill", title: "Mains Power",
+                              detail: "Estimated", value: snapshot.systemWatts.wattsText)
+                    Text("macOS doesn't report power use on desktop Macs. This is an estimate from Apple's idle and maximum figures for \(snapshot.modelName ?? "this Mac") and how busy its processor is. It leaves out graphics load, displays and accessories.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                } else if snapshot.onCharger {
                     DetailRow(symbol: "powerplug.fill", title: "Power Adapter",
                               detail: snapshot.adapterText,
                               value: (snapshot.chargerInputWatts ?? snapshot.fromChargerWatts).wattsText)
@@ -418,7 +426,7 @@ struct NoDataView: View {
                                    description: Text("macOS updates its power figures about once a minute."))
         } else {
             ContentUnavailableView("No Power Data", systemImage: "bolt.slash",
-                                   description: Text("Macs without a battery don't report their power use to apps."))
+                                   description: Text("This Mac doesn't report its power use to apps, and there are no published figures for this model to estimate from."))
         }
     }
 }

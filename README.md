@@ -9,7 +9,7 @@ electricity. Native SwiftUI, sandboxed, public APIs only — built for the Mac A
 - `App/` — the main window, menu bar panel and Settings; `PowerSampler` (a reading every 2 s);
   `GridModel` (finds the grid and its carbon figure); `GridData` (the built-in tables)
 - `Widget/` — WidgetKit extension (small, medium, large)
-- `Shared/` — code both use: the battery reader, `PowerSnapshot`, `GridRates`, the history chart
+- `Shared/` — code both use: the battery reader, the desktop estimate, `PowerSnapshot`, `GridRates`, the history chart
 - `project.yml` — the Xcode project definition; the `.xcodeproj` is generated, not checked in
 
 ## Build
@@ -25,7 +25,12 @@ Or run `xcodegen generate` and open `MacEmissions.xcodeproj` in Xcode.
 ## Where the numbers come from
 
 - Total draw, adapter and battery figures: the `AppleSmartBattery` entry in the I/O Registry.
-  macOS refreshes these about once a minute. Macs without a battery report nothing.
+  macOS refreshes these about once a minute.
+- Desktop Macs have no such entry, so their draw is estimated: Apple's published idle and
+  maximum wattage for the model (Apple Support's power consumption pages for Mac mini, Mac
+  Studio, Mac Pro and iMac, fetched 2026-11-14), interpolated by CPU load. The table is in
+  `Shared/DesktopEstimate.swift`. It ignores graphics load, display brightness and accessories,
+  and the app labels these readings as estimated. Models not in the table show no data.
 - CPU load: `host_statistics`. Thermal state and Low Power Mode: `ProcessInfo`.
 - Emissions: energy used × the carbon intensity of the local grid (g CO₂e per kWh), using the
   most local figure available. All figures are yearly averages, not the live mix.

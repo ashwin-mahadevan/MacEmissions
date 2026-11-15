@@ -137,7 +137,8 @@ struct WidgetStatus: View {
             } else if let grams = snapshot.gramsPerHour {
                 row(grams.co2.perHour.text, symbol: "leaf.fill")
             }
-            row(source, symbol: snapshot.onCharger ? "powerplug.fill" : snapshot.batterySymbol)
+            row(source, symbol: snapshot.isEstimate ? "desktopcomputer"
+                : snapshot.onCharger ? "powerplug.fill" : snapshot.batterySymbol)
             Text("Updated \(snapshot.measuredAt ?? snapshot.date, style: .time)")
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
@@ -161,6 +162,7 @@ struct WidgetStatus: View {
     }
 
     private var source: String {
+        if snapshot.isEstimate { return "Estimated" }
         guard let percent = snapshot.batteryPercent else { return snapshot.sourceTitle }
         let level = (Double(percent) / 100).formatted(.percent)
         return snapshot.onCharger ? "Adapter · \(level)" : "Battery · \(level)"
