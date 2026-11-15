@@ -1,7 +1,14 @@
 import SwiftUI
 
+/// Keeps the app running, and recording, after its window is closed. It carries on in the menu
+/// bar; with the menu bar item turned off, clicking the Dock icon brings the window back.
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
+}
+
 @main
 struct MacEmissionsApp: App {
+    @NSApplicationDelegateAdaptor private var appDelegate: AppDelegate
     @State private var grid: GridModel
     @State private var sampler: PowerSampler
     @AppStorage("showInMenuBar") private var showInMenuBar = true
